@@ -8,12 +8,12 @@ import secrets
 import threading
 from datetime import datetime, timezone
 from functools import lru_cache
-from math import isfinite
+from math import floor, isfinite
 from urllib.parse import urlparse
 import numpy as np
 from flask import Flask, jsonify, request, send_from_directory
 from pyproj import Transformer
-from rasterio.transform import Affine, rowcol
+from affine import Affine
 from src.common import ROOT, OUTPUT, PROCESSED, RAW, setup, config, write_json, pipeline_is_running
 
 app = Flask(__name__, static_folder='web', static_url_path='/static')
@@ -136,7 +136,8 @@ def pixel():
             return jsonify(error='Ano indisponível.'),404
         grid = read_json(PROCESSED/'grid.json')
         x,y = Transformer.from_crs('EPSG:4326',grid['crs'],always_xy=True).transform(lon,lat)
-        row,col = rowcol(Affine(*grid['transform']),x,y)
+        col, row = (~Affine(*grid['transform'])) * (x, y)
+        row, col = floor(row), floor(col)
         if row<0 or col<0 or row>=grid['height'] or col>=grid['width']:
             return jsonify(values=None)
         arrays = load_arrays(year,path.stat().st_mtime_ns)

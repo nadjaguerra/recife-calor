@@ -38,7 +38,7 @@ def prepare(destination):
     shutil.copy2(ROOT / ("requirements-processing.txt" if (ROOT / "requirements-processing.txt").exists()
                          else "requirements.txt"), destination / "requirements-processing.txt")
     (destination / "requirements.txt").write_text(
-        "Flask>=3.1,<4\nrequests>=2.32,<3\nnumpy>=2.2,<3\npyproj>=3.7,<4\nrasterio>=1.4,<2\n",
+        "Flask>=3.1,<4\nrequests>=2.32,<3\nnumpy>=2.2,<3\npyproj>=3.7,<4\naffine>=2.4,<4\n",
         encoding="utf-8",
     )
     shutil.copytree(destination / "web", destination / "public/static",
