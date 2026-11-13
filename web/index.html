@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Recife Calor · Observatório da superfície urbana</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <meta name="description" content="Explore temperatura superficial, vegetação e padrões de calor nos bairros do Recife com dados Landsat.">
+  <link rel="stylesheet" href="/static/vendor/leaflet.css">
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/pernambuco.css">
+  <link rel="stylesheet" href="/static/explorer.css">
+  <script defer src="/static/vendor/leaflet.js"></script>
+  <script defer src="/static/app.js"></script>
+  <script defer src="/static/explorer.js"></script>
+  <script defer src="/static/weather.js"></script>
+  <script defer src="/static/contours.js"></script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="#"><span class="brand-icon" aria-hidden="true">✳</span><span>recife<span class="brand-light">calor</span><small>CIÊNCIA COM RAIZ PERNAMBUCANA</small></span></a>
+  <nav aria-label="Navegação principal"><a class="active" href="#explorar">Explorar mapa</a><a href="#analise">Análise dos dados</a><a href="#metodo">Como funciona</a></nav>
+  <span class="local-badge"><i></i> Projeto local · Dados públicos</span>
+</header>
+<main>
+  <section class="intro">
+    <canvas class="intro-contours" aria-hidden="true" hidden></canvas>
+    <div class="hero-copy"><p class="eyebrow">ENTRE RIOS, CONCRETO E MANGUE · RECIFE, PE</p><h1>Uma cidade vibrante.<br><span>Um calor que tem mapa.</span></h1><p class="intro-copy">Do verde do mangue ao asfalto da cidade: explore as temperaturas do Recife com dados, ciência e um olhar para o território recifense.</p><div class="hero-tags"><span>2019 — 2026</span><span>Dados públicos</span><span>Território em movimento</span></div><img class="mangue-art" src="/static/assets/mangue.svg" alt="" aria-hidden="true"></div>
+    <aside class="weather-card" aria-label="Temperatura atual do ar no Recife" aria-busy="true" id="weatherCard">
+      <div class="weather-heading"><span>RECIFE, AGORA</span><span class="weather-badge" id="weatherBadge"><i></i> Consultando</span></div>
+      <div class="weather-main"><span class="weather-symbol" aria-hidden="true">—</span><p><strong id="weatherTemp">—</strong><span class="weather-unit">°C</span></p></div>
+      <p class="weather-kind">Temperatura do ar · Estação Aeroporto</p><p class="weather-condition" id="weatherCondition">Buscando a última observação medida…</p>
+      <div class="weather-details"><span>Vento <b id="weatherWind">—</b></span><span>Estação <b>SBRF</b></span></div>
+      <p id="weatherTime" class="weather-time" aria-live="polite">Aguardando horário da observação.</p>
+      <div class="weather-footer"><a href="https://aviationweather.gov/data/metar/?id=SBRF" target="_blank" rel="noopener">METAR · NOAA / AWC ↗</a><button id="refreshWeather" type="button" aria-label="Consultar temperatura atual novamente">↻ Consultar</button></div>
+      <p class="weather-note">Consulta automática a cada 5 min. A estação representa um ponto da cidade; os mapas abaixo mostram a superfície em datas históricas.</p>
+    </aside>
+  </section>
+  <div class="cultural-strip" aria-label="Identidade visual inspirada no Recife"><span class="culture-mark">✳</span><p><strong>Ciência conectada ao território.</strong> Cobogós na forma, manguebeat na atitude, dados para conhecer Recife.</p><span class="culture-colors" aria-hidden="true"><i></i><i></i><i></i><i></i></span></div>
+  <section class="stats" aria-label="Indicadores do período selecionado">
+    <article><span>Temperatura média observada</span><strong id="statMean">—</strong><small>Superfície terrestre válida</small></article>
+    <article><span>Maior temperatura observada</span><strong id="statMax">—</strong><small>Na composição selecionada</small></article>
+    <article><span>Vegetação média · NDVI</span><strong id="statNdvi">—</strong><small>Índice entre −1 e 1</small></article>
+    <article><span>Cobertura válida do mapa</span><strong id="statCoverage">—</strong><small>Após filtros de qualidade e água</small></article>
+  </section>
+  <section class="workspace" id="explorar">
+    <aside class="controls">
+      <div class="panel-title"><span class="tiny-label">EXPLORE O TERRITÓRIO</span><h2>Seu olhar sobre Recife</h2></div>
+      <label for="year">Ano da análise</label><select id="year" disabled><option>Aguardando dados</option></select>
+      <p class="field-hint" id="period">Período configurado: setembro a dezembro.</p>
+      <form id="bairroSearch" class="bairro-search">
+        <label for="bairroQuery">Buscar meu bairro</label>
+        <input id="bairroQuery" type="search" list="bairroOptions" placeholder="Ex.: Poço da Panela" required disabled>
+        <datalist id="bairroOptions"></datalist>
+        <button type="submit" class="primary" disabled>Localizar</button>
+        <p id="bairroSearchStatus" class="field-hint" aria-live="polite"></p>
+      </form>
+      <section id="bairroMapSummary" class="bairro-map-summary" aria-label="Indicadores do bairro selecionado" aria-live="polite" hidden>
+        <h3 id="bairroMapName"></h3>
+        <p id="bairroMapPeriod"></p>
+        <dl>
+          <div><dt>Temperatura média da superfície</dt><dd id="bairroMapTemperature"></dd></div>
+          <div><dt>Índice de vegetação (NDVI)</dt><dd id="bairroMapNdvi"></dd></div>
+          <div><dt>Cobertura válida</dt><dd id="bairroMapCoverage"></dd></div>
+        </dl>
+        <p id="bairroMapQuality" hidden></p>
+        <a href="#bairros">Ver histórico e comparar bairros ↓</a>
+      </section>
+      <fieldset><legend>O que você quer visualizar?</legend>
+        <label class="layer-choice"><input type="radio" name="layer" value="temperature" checked><span class="layer-dot heat"></span><span>Temperatura superficial<small>Observada por satélite · °C</small></span></label>
+        <label class="layer-choice"><input type="radio" name="layer" value="ndvi"><span class="layer-dot green"></span><span>Vegetação<small>Índice NDVI</small></span></label>
+        <label class="layer-choice"><input type="radio" name="layer" value="anomaly"><span class="layer-dot purple"></span><span>Contraste térmico<small>Diferença da mediana · °C</small></span></label>
+        <label class="layer-choice"><input type="radio" name="layer" value="predicted"><span class="layer-dot blue"></span><span>Temperatura estimada<small>Random Forest · mapa ajustado</small></span></label>
+      </fieldset>
+      <label for="view">Detalhamento</label><select id="view"><option value="pixels">Pixels · grade de 120 m</option><option value="neighborhoods">Médias por bairro</option></select>
+      <div class="range-label"><label for="opacity">Opacidade da camada</label><output id="opacityValue">80%</output></div><input id="opacity" type="range" min="10" max="100" value="80">
+      <label class="check"><input id="boundaries" type="checkbox" checked> Exibir limites dos bairros</label>
+      <label class="check"><input id="compare" type="checkbox"> Comparar com outro ano</label>
+      <div id="compareControls" hidden><label for="compareYear">Segundo ano</label><select id="compareYear"></select><small>Os mapas acompanham a mesma posição e escala.</small></div>
+      <div class="map-tip"><span>↗</span><p>Clique no mapa para consultar os valores de uma área.</p></div>
+      <a class="download-button" id="downloadCsv" href="#" aria-disabled="true">↓ Baixar dados dos bairros</a>
+    </aside>
+    <div class="map-content">
+      <div class="map-toolbar"><div><span class="live-dot"></span><strong id="mapTitle">Temperatura superficial</strong><span class="map-tag" id="mapYear">Landsat</span></div><div><button id="shareMap" class="text-button" disabled>Compartilhar mapa</button><button id="resetMap" class="text-button">↗ Enquadrar Recife</button></div></div>
+      <div id="sharePanel" class="share-panel" hidden><label for="shareUrl">Link do recorte</label><input id="shareUrl" type="url" readonly><small>O endereço usa o servidor em que o site está aberto.</small></div>
+      <div class="maps" id="maps"><div class="map-pane"><div class="map-label" id="firstLabel"></div><div id="map" class="map"></div></div><div class="map-pane" id="secondPane" hidden><div class="map-label" id="secondLabel"></div><div id="map2" class="map"></div></div>
+        <div class="empty-state" id="emptyState"><div class="empty-icon">◎</div><h3>Vamos conhecer o calor do Recife?</h3><p>Inicie a coleta para buscar imagens reais, processar os mapas e treinar o modelo. A primeira execução pode demorar.</p><button class="primary" id="startEmpty">Coletar dados e gerar mapas →</button><small>Sem cadastro · processamento nesta máquina</small></div>
+      </div>
+      <div class="legend"><div><strong id="legendName">Temperatura superficial</strong><span id="legendUnits">°C</span></div><div id="legendGradient" class="legend-gradient"></div><div class="legend-ticks"><span id="legendMin">20</span><span id="legendMid">32,5</span><span id="legendMax">45</span></div><p id="layerExplanation">Temperatura da superfície no horário de passagem do satélite. Não representa a temperatura do ar.</p></div>
+    </div>
+  </section>
+  <div class="status-strip"><span id="statusText">Verificando os dados locais…</span><button id="processButton" class="text-button">↻ Atualizar dados e modelo</button></div>
+  <div class="quality-note">
+    <p><strong>Erro do modelo.</strong> É a diferença, em valor absoluto, entre a temperatura da superfície indicada pelo satélite e a estimada pelo modelo. Se o Landsat indicou 38 °C e o modelo estimou 36 °C, o erro é de 2 °C.</p>
+    <p><strong>Qualidade dos dados.</strong> A medição do satélite tem sua própria margem de incerteza. O filtro inicial descarta pixels cuja incerteza informada pelo Landsat passa de 8 °C.</p>
+    <p><strong>Cores da legenda.</strong> Se a escala termina em 45 °C, a última cor representa 45 °C ou mais. A primeira cor também inclui valores abaixo do início da escala.</p>
+  </div>
+  <section id="bairros" class="analysis-section" hidden>
+    <div class="section-heading"><div><h2>Seu bairro em dados</h2></div><p>Compare dois bairros no mesmo ano ou consulte o histórico do primeiro bairro selecionado.</p></div>
+    <div class="analysis-grid">
+      <article class="card">
+        <h3>Comparar bairros</h3>
+        <div class="bairro-fields">
+          <label>Primeiro bairro<select id="bairroFirst"></select></label>
+          <label>Segundo bairro<select id="bairroSecond"></select></label>
+        </div>
+        <p id="bairroPeriod"></p>
+        <div id="bairroComparison" aria-live="polite"></div>
+        <button id="showBairros" class="text-button">Localizar no mapa ↑</button>
+      </article>
+      <article class="card">
+        <h3>Histórico de calor do bairro</h3>
+        <p>Temperatura média da superfície nas cenas de cada ano.</p>
+        <div id="bairroTimeline" class="chart"></div>
+        <label for="bairroHistoryYear">Consultar datas e cobertura</label>
+        <select id="bairroHistoryYear"></select>
+        <p id="bairroHistoryDetail" aria-live="polite"></p>
+        <p class="chart-note">As datas e a cobertura variam entre os anos. A série descreve as composições disponíveis.</p>
+      </article>
+    </div>
+  </section>
+  <section id="analise" class="analysis-section">
+    <div class="section-heading"><div><h2>O que os dados mostram</h2></div></div>
+    <h3>Rankings dos bairros em <span id="rankingYear">—</span></h3>
+    <p class="field-hint">Bairros com pelo menos 50% de cobertura válida. Temperatura média da superfície em °C e vegetação pelo índice NDVI.</p>
+    <div class="analysis-grid">
+      <article class="card"><h3>10 bairros menos quentes</h3><div id="rankingCool"><p class="muted">Aguardando dados.</p></div></article>
+      <article class="card"><h3>10 bairros mais quentes</h3><div id="rankingHot"><p class="muted">Aguardando dados.</p></div></article>
+      <article class="card"><h3>10 bairros com maior índice de vegetação</h3><div id="rankingGreen"><p class="muted">Aguardando dados.</p></div></article>
+      <article class="card"><h3>10 bairros com menor índice de vegetação</h3><div id="rankingLessGreen"><p class="muted">Aguardando dados.</p></div></article>
+    </div>
+    <h3>Padrões na cidade</h3>
+    <div class="analysis-grid">
+      <article class="card"><h3>Temperatura média de Recife ao longo dos anos</h3><p>Média da temperatura da superfície nas composições selecionadas, em °C.</p><div id="timeline" class="chart" role="img" aria-label="Temperatura média da superfície em Recife por ano"></div><p class="chart-note">Datas, nuvens e cobertura variam entre os anos. Consulte as cenas utilizadas abaixo.</p></article>
+      <article class="card"><h3>Vegetação e temperatura</h3><p>Cada ponto representa uma célula e um ano. Associação não implica causalidade.</p><div id="scatter" class="chart" role="img" aria-label="Relação entre NDVI e temperatura superficial"></div></article>
+    </div>
+    <div class="analysis-grid model-grid">
+    <article class="card model-card"><div class="card-heading"><h3>Como o modelo se sai?</h3><span class="model-badge">Random Forest</span></div><p>Validação em blocos espaciais, com separação de 240 m entre treino e teste.</p><div class="model-metrics"><div><strong id="mae">—</strong><small>MAE · °C</small></div><div><strong id="rmse">—</strong><small>RMSE · °C</small></div><div><strong id="r2">—</strong><small>R²</small></div></div><p id="baselineText" class="baseline">Comparação com uma previsão simples pela média do treino.</p><div id="importance"></div><a href="/download/metrics.json" class="inline-link">Baixar métricas completas ↗</a></article></div>
+  </section>
+  <section class="method-section" id="metodo"><div><p class="eyebrow">CIÊNCIA COM TRANSPARÊNCIA</p><h2>De onde vêm essas informações?</h2><p>Dados públicos, critérios explícitos e resultados que você pode conferir.</p></div><div class="method-details"><details open><summary>Imagens, período e processamento</summary><p>Foram utilizadas imagens Landsat Collection 2 Level 2. A temperatura superficial foi obtida do produto do USGS, e a reflectância foi utilizada para calcular NDVI, NDBI e NDWI. A configuração inicial seleciona até três cenas por ano entre setembro e dezembro, de 2019 a 2026. São composições sazonais, não médias anuais. O ano corrente é identificado como parcial.</p><p>Nuvens, cirrus, sombras, neve, água, saturação e pixels com incerteza térmica acima de 8 K são filtrados. Pelo menos 75% dos pixels de 30 m de cada célula precisam ser válidos. As observações são agregadas em grade de 120 m e combinadas pela mediana.</p></details><details><summary>O que o mapa de contraste térmico significa?</summary><p>Mostra quanto cada célula difere da mediana terrestre do Recife na composição selecionada. Valores positivos indicam superfícies relativamente mais quentes. Não é uma comparação urbana-rural nem uma medição da temperatura do ar.</p></details><details><summary>Aprendizagem de máquina e limites</summary><p>O Random Forest Regressor recebe NDVI, NDBI, NDWI e reflectâncias vermelha, infravermelha próxima e infravermelha de ondas curtas. Nenhuma banda térmica entra como preditora. Todas as observações de uma localização ficam no mesmo bloco de validação de 2,4 km. O mapa estimado usa o modelo final ajustado aos dados; as métricas usam apenas previsões fora dos blocos de treinamento. Isso não mede previsão de anos futuros.</p><p>A importância das variáveis mede contribuição preditiva por redução de impureza; não estabelece causalidade. NDVI não é porcentagem de árvores. Não se inferem telhados ou árvores individuais nesta resolução.</p></details><details><summary>Cenas utilizadas e qualidade da cobertura</summary><div id="scenesList">Nenhuma imagem processada ainda.</div></details><details><summary>Fontes e arquivos</summary><p><a href="https://www.usgs.gov/landsat-missions/landsat-collection-2-surface-temperature" target="_blank" rel="noopener">USGS · Temperatura superficial Landsat ↗</a></p><p><a href="https://planetarycomputer.microsoft.com/dataset/landsat-c2-l2" target="_blank" rel="noopener">Microsoft Planetary Computer · Catálogo Landsat ↗</a></p><p><a href="https://dados.recife.pe.gov.br/dataset/1702c764-ec7a-4ef0-9861-8acd0e40c819" target="_blank" rel="noopener">Prefeitura do Recife · Malha de bairros ↗</a></p><p><a href="/download/manifest.json">Baixar procedência e configuração ↗</a> · <a id="downloadTif" href="#">GeoTIFF da camada selecionada ↗</a></p></details></div></section>
+  <footer><span class="footer-brand">recife<b>calor</b> ✳</span><span>Projeto Integrador de Ciência dos Dados III · Recife, PE</span><span>Feito de dados. Inspirado no mangue.</span></footer>
+</main>
+<div class="toast" id="toast" role="status" hidden></div>
+</body></html>

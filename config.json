@@ -1,0 +1,15 @@
+{
+  "start_year": 2019,
+  "end_year": 2026,
+  "as_of": "2026-10-26",
+  "months": [9, 10, 11, 12],
+  "scenes_per_year": 3,
+  "max_attempts_per_year": 8,
+  "max_cloud_cover": 65,
+  "min_scene_land_coverage": 0.25,
+  "resolution_m": 120,
+  "max_temperature_uncertainty_k": 8,
+  "spatial_block_m": 2400,
+  "validation_buffer_m": 240,
+  "seed": 42
+}

@@ -1,0 +1,10 @@
+.github/
+.venv/
+__pycache__/
+main.py
+src/pipeline.py
+preparar_publicacao.py
+requirements-processing.txt
+data/raw/
+outputs/models/
+outputs/validation_predictions.csv

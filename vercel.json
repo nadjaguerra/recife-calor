@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "flask",
+  "functions": {
+    "app.py": {
+      "includeFiles": "{web/**,data/processed/**,outputs/manifest.json,outputs/metrics.json,outputs/bairros_*.csv,outputs/maps/**}",
+      "excludeFiles": "{.github/**,.venv/**,data/raw/**,outputs/models/**,outputs/validation_predictions.csv,src/pipeline.py}"
+    }
+  }
+}

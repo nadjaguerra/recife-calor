@@ -1,0 +1,155 @@
+.map.leaflet-grab,
+.map .leaflet-interactive {
+  cursor: url("assets/sun-cursor.svg") 16 16, grab;
+}
+
+.leaflet-dragging .map.leaflet-grab,
+.leaflet-dragging .map .leaflet-interactive {
+  cursor: url("assets/sun-cursor.svg") 16 16, grabbing;
+}
+
+.bairro-search {
+  display: grid;
+  gap: 6px;
+  margin: 16px 0;
+}
+
+.bairro-search label,
+.bairro-search .field-hint {
+  margin: 0;
+}
+
+.bairro-search input,
+.share-panel input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 9px 10px;
+  color: var(--ink);
+  background: #fffefa;
+  border: 1px solid #bd3c26;
+  border-radius: 6px;
+  font: inherit;
+}
+
+.bairro-search button {
+  justify-self: start;
+}
+
+.bairro-map-summary {
+  padding: 10px;
+  margin-bottom: 16px;
+  border: 1px solid #d78a77;
+  border-radius: 6px;
+  background: #fff1e2;
+  font-size: 12px;
+}
+
+.bairro-map-summary h3,
+.bairro-map-summary p {
+  margin: 0 0 6px;
+}
+
+.bairro-map-summary h3,
+.bairro-map-summary a {
+  color: var(--warm-red);
+}
+
+.bairro-map-summary dl {
+  margin: 8px 0;
+}
+
+.bairro-map-summary dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.bairro-map-summary dd {
+  margin: 0;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.bairro-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.bairro-fields label,
+#bairroHistoryYear {
+  min-width: 0;
+}
+
+.bairro-fields select {
+  width: 100%;
+}
+
+#bairroComparison {
+  overflow-x: auto;
+  margin-bottom: 12px;
+}
+
+.bairro-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  text-align: left;
+}
+
+.bairro-table th,
+.bairro-table td {
+  padding: 8px 6px;
+  border-bottom: 1px solid #e5d2c6;
+}
+
+.bairro-table td {
+  white-space: nowrap;
+}
+
+.bairro-table thead {
+  color: var(--warm-red);
+  background: #fff1e2;
+}
+
+.map-toolbar,
+.map-toolbar > div {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.neighborhood-ranking {
+  margin: 10px 0 0;
+  padding-inline-start: 26px;
+}
+
+.neighborhood-ranking li {
+  padding: 6px 0;
+  border-bottom: 1px solid #e5d2c6;
+}
+
+.neighborhood-ranking li > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.neighborhood-ranking strong {
+  color: var(--warm-red);
+  white-space: nowrap;
+}
+
+.analysis-grid.model-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.share-panel:not([hidden]) {
+  display: grid;
+  gap: 5px;
+  padding: 10px 15px;
+  background: #fff5e8;
+  font-size: 12px;
+}
