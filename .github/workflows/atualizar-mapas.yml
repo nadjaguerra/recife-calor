@@ -62,4 +62,11 @@ jobs:
         run: |
           test -n "$VERCEL_TOKEN" && test -n "$VERCEL_ORG_ID" && test -n "$VERCEL_PROJECT_ID" ||
             { echo "::error::Configure o token e os IDs do projeto Vercel no GitHub."; exit 1; }
-          npx --yes vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN"
+          cli=(npx --yes vercel@65.15.0)
+          deployment=$("${cli[@]}" deploy --prod --skip-domain --yes --token "$VERCEL_TOKEN")
+          for route in / /static/app.js '/api/pixel?year=2019&lat=-8.05&lon=-34.94' /maps/2019_temperature.png; do
+            "${cli[@]}" curl "$route" --deployment "$deployment" --token "$VERCEL_TOKEN" -- --fail --silent --show-error --max-time 45 --output /dev/null
+          done
+          "${cli[@]}" curl /api/manifest --deployment "$deployment" --token "$VERCEL_TOKEN" -- --fail --silent --show-error --max-time 45 --output "$RUNNER_TEMP/manifest-vercel.json"
+          python -c 'import json, sys; from pathlib import Path; assert json.loads(Path(sys.argv[1]).read_text()) == json.loads(Path("outputs/manifest.json").read_text()), "Manifesto publicado diverge do processado"' "$RUNNER_TEMP/manifest-vercel.json"
+          "${cli[@]}" promote "$deployment" --yes --token "$VERCEL_TOKEN"
