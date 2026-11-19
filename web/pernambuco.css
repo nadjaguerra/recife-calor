@@ -101,3 +101,21 @@ body{background-color:var(--paper);background-image:radial-gradient(#e6decf 0.6p
   line-height: 1.7;
   color: #63392c;
 }
+
+.reading-guide {
+  margin: 16px 0;
+  padding: 16px 20px;
+  border: 1px solid #e8c6a8;
+  border-radius: 12px;
+  background: #fffaf0;
+  color: #63392c;
+}
+.reading-guide summary {
+  cursor: pointer;
+  color: #a82b20;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.reading-guide p { margin: 12px 0 0; line-height: 1.65; font-size: .95rem; }
+.compact-guide { padding: 12px 14px; }
+.controls .compact-guide p { font-size: .85rem; }
