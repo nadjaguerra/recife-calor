@@ -81,3 +81,23 @@ body{background-color:var(--paper);background-image:radial-gradient(#e6decf 0.6p
   background: #642c21c9;
   border-color: #eb9079;
 }
+
+.surface-explanation {
+  margin: 24px 0 18px;
+  padding: 22px 26px;
+  background: #fff6df;
+  border-left: 4px solid #b52e20;
+  border-radius: 12px;
+}
+.surface-explanation h2 {
+  margin: 0 0 10px;
+  color: #a82b20;
+  font-size: clamp(1.3rem, 2.2vw, 1.7rem);
+  line-height: 1.25;
+}
+.surface-explanation p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: #63392c;
+}
