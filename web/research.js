@@ -4,6 +4,7 @@
   const available = value => typeof value === 'number' && Number.isFinite(value);
   const cache = new Map();
   let grid, catalog, current, reference, map, overlay, selectedLine;
+  let activeValues = [], activeMode = 'difference';
   let requestVersion = 0;
   let tracing = false;
   let endpoints = [];
@@ -40,30 +41,51 @@
     if (!current) return;
     const mode = el('researchMode').value;
     const values = mode === 'frequency' ? grid.frequency : mode === 'count' ? current.count : mode === 'error' ? current.error : current.temperature.map((value, i) => available(value) && available(reference.temperature[i]) ? value - reference.temperature[i] : null);
-    const features = [];
-    values.forEach((value, i) => {
-      if (!available(value) || (mode === 'count' && !available(current.temperature[i]))) return;
-      const ring = grid.polygons[i];
-      features.push({type: 'Feature', geometry: {type: 'Polygon', coordinates: [[...ring, ring[0]]]}, properties: {value, index: i}});
+    activeValues = values;
+    activeMode = mode;
+    let validCells = 0;
+    values.forEach((value, index) => {
+      if (available(value) && !(mode === 'count' && !available(current.temperature[index]))) validCells++;
     });
-    if (overlay) overlay.remove();
-    overlay = L.geoJSON({type: 'FeatureCollection', features}, {
-      style: feature => ({fillColor: fillColor(feature.properties.value, mode), fillOpacity: .7, color: 'transparent', weight: 0}),
-      onEachFeature: (feature, layer) => {
-        const {value, index} = feature.properties;
-        const cell = grid.cells[index];
-        const name = current.neighborhoods.find(x => x.id === cell[4])?.name || 'Área selecionada';
-        const description = mode === 'frequency' ? `${fmt(value)}% · ${grid.hot_years[index]} anos quentes em ${grid.valid_years[index]} anos válidos` : mode === 'count' ? `${fmt(value, 0)} cenas válidas` : `${fmt(value)} °C`;
-        layer.bindPopup(`<strong>${esc(bairroDisplayName(name))}</strong><p>${esc(description)}</p><small>Célula da grade de 120 m. Consulte o critério da camada acima do mapa.</small>`);
-        layer.on('click', event => { if (tracing) addEndpoint(event.latlng); });
-      }
-    }).addTo(map);
+    const style = feature => {
+      const index = feature.properties.index;
+      const value = activeValues[index];
+      const shown = available(value) && !(activeMode === 'count' && !available(current.temperature[index]));
+      return {fillColor: shown ? fillColor(value, activeMode) : 'transparent', fillOpacity: shown ? .7 : 0, stroke: false};
+    };
+    if (!overlay) {
+      const features = grid.polygons.map((ring, index) => ({
+        type: 'Feature', geometry: {type: 'Polygon', coordinates: [[...ring, ring[0]]]}, properties: {index}
+      }));
+      overlay = L.geoJSON({type: 'FeatureCollection', features}, {
+        style,
+        onEachFeature: (feature, layer) => {
+          layer.on('click', event => {
+            if (tracing) { addEndpoint(event.latlng); return; }
+            const index = feature.properties.index;
+            const value = activeValues[index];
+            if (!available(value) || (activeMode === 'count' && !available(current.temperature[index]))) return;
+            const cell = grid.cells[index];
+            const name = current.neighborhoods.find(x => x.id === cell[4])?.name || 'Área selecionada';
+            const description = activeMode === 'frequency'
+              ? `${fmt(value)}% · ${grid.hot_years[index]} anos quentes em ${grid.valid_years[index]} anos válidos`
+              : activeMode === 'count' ? `${fmt(value, 0)} cenas válidas` : `${fmt(value)} °C`;
+            L.popup().setLatLng(event.latlng).setContent(
+              `<strong>${esc(bairroDisplayName(name))}</strong><p>${esc(description)}</p><small>Célula da grade de 120 m. Consulte o critério da camada acima do mapa.</small>`
+            ).openOn(map);
+          });
+        }
+      }).addTo(map);
+    } else {
+      if (!map.hasLayer(overlay)) overlay.addTo(map);
+      overlay.setStyle(style);
+    }
     contextLayers.forEach(layer => layer.bringToFront());
     if (selectedLine) selectedLine.bringToFront();
     el('researchExplanation').textContent = explanations[mode];
     const sameYear = mode === 'difference' && current.year === reference.year;
     const title = sameYear ? 'Os dois seletores estão no mesmo ano. A diferença é zero nas células válidas.' : mode === 'difference' ? `${current.year} menos ${reference.year}` : mode === 'frequency' ? 'Todos os anos disponíveis' : String(current.year);
-    el('researchStatus').textContent = `${title} · ${fmt(features.length, 0)} células com dados para esta camada.${features.length ? '' : ' Nenhum resultado disponível para os critérios escolhidos.'}`;
+    el('researchStatus').textContent = `${title} · ${fmt(validCells, 0)} células com dados para esta camada.${validCells ? '' : ' Nenhum resultado disponível para os critérios escolhidos.'}`;
     el('researchLegend').textContent = mode === 'frequency' ? 'Amarelo claro 0–25% · laranja 25–50% · vermelho 50–75% · vinho 75–100%. O percentual exato aparece ao clicar.' : mode === 'count' ? 'Amarelo 1 cena · verde claro 2 cenas · verde escuro 3 ou mais. Clique para ver o número exato.' : 'Azul escuro abaixo de −2 °C · azul claro de −2 a −0,5 °C · creme de −0,5 a +0,5 °C · laranja até +2 °C · vermelho acima de +2 °C.';
   }
 
