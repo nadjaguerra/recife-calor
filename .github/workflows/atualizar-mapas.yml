@@ -61,45 +61,4 @@ jobs:
         working-directory: ${{ runner.temp }}/recife-calor
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: |
-          test -n "$VERCEL_TOKEN" && test -n "$VERCEL_ORG_ID" && test -n "$VERCEL_PROJECT_ID" ||
-            { echo "::error::Configure o token e os IDs do projeto Vercel no GitHub."; exit 1; }
-          cli=(npx --yes vercel@65.15.0 --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID")
-          previous=$(python -c 'import os, requests; r=requests.get("https://api.vercel.com/v9/projects/"+os.environ["VERCEL_PROJECT_ID"],params={"teamId":os.environ["VERCEL_ORG_ID"]},headers={"Authorization":"Bearer "+os.environ["VERCEL_TOKEN"]},timeout=30); r.raise_for_status(); print(r.json().get("targets",{}).get("production",{}).get("id",""))')
-          test -n "$previous" || { echo "::error::A versão anterior não pôde ser identificada."; exit 1; }
-          deployment=$("${cli[@]}" deploy --prod --skip-domain --yes)
-          "${cli[@]}" promote "$deployment" --yes
-          if ! python - <<'PY'
-          import json, time
-          from pathlib import Path
-          import requests
-          expected = json.loads(Path("outputs/manifest.json").read_text())
-          last_error = None
-          for attempt in range(8):
-              try:
-                  base = "https://recife-calor.vercel.app"
-                  for route in ["/", "/static/app.js", "/static/research.js",
-                                "/maps/2019_temperature.png",
-                                "/api/pixel?year=2019&lat=-8.05&lon=-34.94"]:
-                      response = requests.get(base + route, timeout=45)
-                      response.raise_for_status()
-                  response = requests.get(base + "/api/manifest", timeout=45)
-                  response.raise_for_status()
-                  assert response.json() == expected, "Manifesto público diverge do processado"
-                  for route in ["/api/research-grid"] + [
-                      f"/api/research/{entry['year']}" for entry in expected["years"]
-                  ]:
-                      response = requests.get(base + route, timeout=45)
-                      response.raise_for_status()
-                      assert response.json()["generated_at"] == expected["generated_at"]
-                  break
-              except (requests.RequestException, ValueError, AssertionError) as error:
-                  last_error = error
-                  time.sleep(5)
-          else:
-              raise SystemExit(f"Falha ao conferir a versão pública: {last_error}")
-          PY
-          then
-            "${cli[@]}" promote "$previous" --yes
-            exit 1
-          fi
+        run: python "$GITHUB_WORKSPACE/publicar_vercel.py" "$RUNNER_TEMP/recife-calor"

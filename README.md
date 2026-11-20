@@ -105,7 +105,7 @@ Abra o [endereço local](http://127.0.0.1:8000/). Para refazer a coleta e o trei
 
 O **GitHub Actions** coleta as imagens, recalcula os mapas e ajusta o modelo em um servidor hospedado pelo GitHub. A **Vercel** hospeda a aplicação Flask e serve os dados processados. O site e a rotina de atualização podem funcionar com o computador pessoal desligado.
 
-O workflow está configurado para rodar às segundas-feiras, às 6h27 no horário de Recife, entre setembro e dezembro. Para iniciar manualmente, abra **Actions → Atualizar mapas do Recife Calor → Run workflow**. O workflow confere os anos disponíveis, testa rotas e compara o manifesto do deploy com o arquivo processado antes de promover a versão ao endereço público. Acompanhe pela [aba Actions](https://github.com/nadjaguerra/recife-calor/actions/workflows/atualizar-mapas.yml).
+O workflow está configurado para rodar às segundas-feiras, às 6h27 no horário de Recife, entre setembro e dezembro. Para iniciar manualmente, abra **Actions → Atualizar mapas do Recife Calor → Run workflow**. O workflow confere os anos disponíveis e os testes científicos. A publicação usa a API oficial da Vercel. Depois do build, o endereço público é conferido contra o manifesto e as análises processadas; se essa conferência falhar, a rotina solicita a restauração da versão anterior. Acompanhe pela [aba Actions](https://github.com/nadjaguerra/recife-calor/actions/workflows/atualizar-mapas.yml).
 
 Em uma nova instalação, configure no GitHub o secret `VERCEL_TOKEN` e as variáveis `VERCEL_ORG_ID` e `VERCEL_PROJECT_ID`. As dependências de geoprocessamento e treinamento ficam em `requirements-processing.txt`.
 
