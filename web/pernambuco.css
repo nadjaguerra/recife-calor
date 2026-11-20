@@ -119,3 +119,22 @@ body{background-color:var(--paper);background-image:radial-gradient(#e6decf 0.6p
 .reading-guide p { margin: 12px 0 0; line-height: 1.65; font-size: .95rem; }
 .compact-guide { padding: 12px 14px; }
 .controls .compact-guide p { font-size: .85rem; }
+
+.research-controls { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 16px; margin: 20px 0; }
+.research-controls label, #pesquisa .card > label { display: block; font-weight: 600; }
+#pesquisa select { width: 100%; margin-top: 8px; padding: 10px; background: #fffdf6; color: #733824; border: 1px solid #c97451; border-radius: 6px; }
+.research-map { height: 540px; border: 1px solid #bb442e; border-radius: 12px; }
+.research-legend { padding: 12px 16px; background: #fff4d9; border-radius: 8px; font-weight: 600; }
+.research-context { display: flex; flex-wrap: wrap; gap: 12px; padding: 14px; margin: 16px 0; border: 1px solid #e8c6a8; border-radius: 8px; }
+.research-context label { font-size: .9rem; }
+.research-profile { margin: 22px 0; }
+.research-table { overflow-x: auto; margin-top: 16px; }
+.research-table table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.research-table th, .research-table td { padding: 10px 8px; border-bottom: 1px solid #ead3bd; text-align: left; }
+.research-table th { background: #fff0df; color: #923920; }
+.population-table { max-height: 430px; overflow-y: auto; }
+.population-table th { position: sticky; top: 0; }
+#pesquisa .card p { line-height: 1.65; }
+@media(max-width: 700px) { .research-controls { grid-template-columns: 1fr; } .research-map { height: 420px; } }
+
+#pesquisa .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

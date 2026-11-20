@@ -96,6 +96,19 @@ def validation(year):
     return jsonify(points=points)
 
 
+@app.get('/api/research/<int:year>')
+def research(year):
+    path = OUTPUT / f'research-{year}.json'
+    if not path.exists():
+        return jsonify(error='Análise deste ano ainda indisponível.'), 404
+    return send_from_directory(OUTPUT, path.name, max_age=0)
+
+
+@app.get('/api/research-grid')
+def research_grid():
+    return send_from_directory(OUTPUT, 'research-grid.json', max_age=0)
+
+
 @app.get('/api/weather')
 def weather():
     from src.weather import current_weather

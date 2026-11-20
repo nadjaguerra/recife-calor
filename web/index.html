@@ -14,6 +14,7 @@
   <script defer src="/static/explorer.js"></script>
   <script defer src="/static/weather.js"></script>
   <script defer src="/static/contours.js"></script>
+  <script defer src="/static/research.js"></script>
 </head>
 <body>
 <header class="topbar">
@@ -132,6 +133,7 @@
   </section>
   <section id="analise" class="analysis-section">
     <div class="section-heading"><div><h2>O que os dados mostram</h2></div></div>
+    <p><a class="inline-link" href="#pesquisa">Explorar diferenças entre anos, recorrência e contexto dos bairros ↓</a></p>
     <h3>Rankings dos bairros em <span id="rankingYear">—</span></h3>
     <p class="field-hint">As listas comparam as médias dos bairros no período selecionado. Entram apenas bairros com pelo menos metade da área coberta por dados válidos. Um bairro ausente pode ter cobertura insuficiente. As posições podem mudar conforme o ano, as cenas e as áreas observadas.</p>
     <div class="analysis-grid">
@@ -147,6 +149,79 @@
     </div>
     <div class="analysis-grid model-grid">
     <article class="card model-card"><div class="card-heading"><h3>Como o modelo se sai?</h3><span class="model-badge">Random Forest</span></div><p>Validação em blocos espaciais, com separação de 240 m entre treino e teste.</p><div class="model-metrics"><div><strong id="mae">—</strong><small>MAE · °C</small></div><div><strong id="rmse">—</strong><small>RMSE · °C</small></div><div><strong id="r2">—</strong><small>R²</small></div></div><p id="baselineText" class="baseline">Comparação com uma previsão simples pela média do treino.</p><details class="reading-guide compact-guide"><summary>Como interpretar esses números?</summary><p><strong>MAE</strong> é o tamanho médio do erro em °C. Um MAE de 2 °C indica que a diferença absoluta entre estimativa e observação foi, em média, de 2 °C nas áreas de teste.</p><p><strong>RMSE</strong> também mede erro em °C e dá mais peso às diferenças grandes. Para ambos, valores menores indicam melhor reprodução das observações.</p><p><strong>R²</strong> compara os erros com a variação dos dados de teste. Um valor mais próximo de 1 indica melhor ajuste; valores negativos também são possíveis. O valor 0,76 não equivale a 76% de acertos.</p><p>O teste reserva regiões para avaliar o modelo em áreas que ficaram fora do treinamento. A comparação com a média do treino mostra se o modelo melhora uma estimativa simples. Esses números medem a reprodução do produto de satélite, que tem sua própria incerteza.</p></details><p class="chart-note">A importância das variáveis mostra quais características mais ajudaram o modelo a estimar a temperatura. Ela pode ser afetada pela semelhança entre os índices e não mede o efeito de plantar árvores ou alterar uma superfície.</p><div id="importance"></div><a href="/download/metrics.json" class="inline-link">Baixar métricas completas ↗</a></article></div>
+  </section>
+
+  <section id="pesquisa" class="analysis-section">
+    <div class="section-heading"><div><p class="eyebrow">APROFUNDE SUA LEITURA</p><h2>Onde o calor se repete?</h2></div></div>
+    <p>Explore mudanças entre as imagens, diferenças dentro dos bairros e a relação com áreas naturais. Todas as temperaturas desta seção são da superfície nas cenas selecionadas.</p>
+    <div class="research-controls">
+      <label>Ano da análise<select id="researchYear" disabled><option>Carregando…</option></select></label>
+      <label>Ano de referência<select id="researchReference" disabled><option>Carregando…</option></select></label>
+      <label>O que mostrar no mapa<select id="researchMode">
+        <option value="difference">Diferença entre dois anos</option>
+        <option value="frequency">Frequência de áreas mais quentes</option>
+        <option value="count">Quantidade de cenas válidas</option>
+        <option value="error">Erro do modelo nas áreas de teste</option>
+      </select></label>
+    </div>
+    <p id="researchPeriod" class="chart-note"></p>
+    <p id="researchExplanation" class="reading-guide"></p>
+    <div id="researchMap" class="research-map" role="region" aria-label="Mapa das análises espaciais de Recife"></div>
+    <p id="researchLegend" class="research-legend"></p>
+    <p id="researchStatus" role="status" aria-live="polite">Carregando análises…</p>
+    <fieldset class="research-context"><legend>Localize áreas naturais no mapa</legend>
+      <label><input type="checkbox" value="parques"> Parques, praças e áreas verdes cadastradas</label>
+      <label><input type="checkbox" value="rios"> Rios cadastrados</label>
+      <label><input type="checkbox" value="manguezal"> Parque dos Manguezais</label>
+    </fieldset>
+    <p class="chart-note">As camadas naturais usam o cadastro municipal consultado em 19/11/2026. Sua localização atual serve de contexto para os mapas históricos. O Parque dos Manguezais é o recorte de manguezal utilizado nesta análise.</p>
+    <article class="card research-profile">
+      <h3>Como a superfície muda ao longo de um trajeto?</h3>
+      <p>Ative o botão e clique em dois pontos no mapa acima. Será desenhada uma linha reta entre eles e um gráfico com as temperaturas das células próximas ao trajeto no ano escolhido.</p>
+      <button id="researchTrace" type="button" class="primary" disabled>Marcar início e fim</button>
+      <button id="researchClearTrace" type="button" class="text-button">Limpar trajeto</button>
+      <p id="researchTraceStatus" role="status" aria-live="polite"></p>
+      <div id="researchProfile" class="chart"></div>
+      <p class="chart-note">A linha é um recorte de estudo, sem cálculo de ruas ou percurso de caminhada. Os pontos são amostrados a aproximadamente 120 m, respeitando a resolução da grade. Trechos sem observação válida ficam com lacunas. As imagens não medem o conforto térmico de quem passa pelo local.</p>
+    </article>
+    <div class="analysis-grid">
+      <article class="card">
+        <h3>Dentro do bairro, o calor também varia</h3>
+        <label for="researchBairro">Bairro para detalhar</label><select id="researchBairro" disabled></select>
+        <p>O traço central mostra a mediana. A caixa reúne a metade central dos valores; os extremos da linha vão do percentil 10 ao 90. A tabela informa também o mínimo e o máximo.</p>
+        <div id="researchBox" class="chart"></div>
+        <div id="researchDistribution" class="research-table"></div>
+        <p class="chart-note">O bairro pode ter áreas verdes, ruas e telhados com temperaturas diferentes. O gráfico resume apenas as células observadas no ano escolhido.</p>
+      </article>
+      <article class="card">
+        <h3>Vegetação por faixas</h3>
+        <p>As células são agrupadas pelo NDVI, do menor para o maior índice de vegetação. Compare as medianas e a faixa central de temperatura para observar como os grupos se distribuem.</p>
+        <div id="researchBins" class="research-table"></div>
+        <p class="chart-note">Q25 e Q75 delimitam a metade central dos valores. N é a quantidade de células válidas, que podem ser vizinhas. A comparação é exploratória e outros fatores, como materiais e umidade, também influenciam os valores.</p>
+      </article>
+      <article class="card">
+        <h3>Perto dos parques, rios e manguezais</h3>
+        <label for="researchNatural">Área natural de referência</label>
+        <select id="researchNatural"><option value="parques">Parques, praças e áreas verdes</option><option value="rios">Rios cadastrados</option><option value="manguezal">Parque dos Manguezais</option></select>
+        <p>Compare a temperatura das células em faixas de distância dessas áreas. As distâncias são aproximadas, calculadas em uma grade de 120 m. Células que tocam a área natural entram na primeira faixa.</p>
+        <div id="researchProximity" class="research-table"></div>
+        <p class="chart-note">A análise inclui as superfícies terrestres válidas. Os grupos podem ter ocupação urbana e vegetação diferentes. Uma área distante de uma praça cadastrada também pode conter mata ou outra vegetação. Uma diferença entre grupos não quantifica, sozinha, o efeito de um parque ou de um rio.</p>
+      </article>
+      <article class="card">
+        <h3>Os resultados mudam com as escolhas?</h3>
+        <p>Esta análise de sensibilidade compara a composição padrão, um filtro térmico mais rigoroso e uma composição que usa apenas a primeira cena selecionada.</p>
+        <div id="researchSensitivity" class="research-table"></div>
+        <p id="researchSensitivityDetail" class="chart-note"></p>
+        <p class="chart-note">Um filtro mais rigoroso pode retirar áreas do mapa e mudar o conjunto observado. A diferença em células comuns ajuda a distinguir essa mudança de cobertura. A comparação com a primeira cena também muda a data observada. Esses testes avaliam o mapa de temperatura; o modelo continua usando o processamento padrão.</p>
+      </article>
+    </div>
+    <article class="card">
+      <h3>Calor nos bairros e população residente</h3>
+      <p>A tabela reúne a população do Censo 2022, a temperatura média das células válidas e a parcela observada pelo menos 2 °C acima da mediana da cidade no ano escolhido. Assim, é possível examinar o contexto demográfico dos bairros com superfícies mais quentes.</p>
+      <div id="researchPopulation" class="research-table population-table" tabindex="0" role="region" aria-label="População e calor por bairro"></div>
+      <p class="chart-note">A população descreve todo o bairro em 2022. A coluna de área quente descreve somente a superfície com dados válidos no período das imagens. Ela não permite calcular quantos moradores estavam naquela área ou medir exposição individual ao calor. Bairros com menos de 50% de cobertura ficam fora desta comparação.</p>
+      <p><a href="https://ftp.ibge.gov.br/Censos/Censo_Demografico_2022/Agregados_por_Setores_Censitarios/Agregados_por_Bairro_csv/" target="_blank" rel="noopener">IBGE · Agregados por bairro do Censo 2022 ↗</a> · <a href="https://dados.recife.pe.gov.br/dataset/parques-e-pracas" target="_blank" rel="noopener">Prefeitura de Recife · Parques e praças ↗</a> · <a href="https://dados.recife.pe.gov.br/dataset/area-urbana" target="_blank" rel="noopener">Recursos hídricos ↗</a> · <a href="https://dados.recife.pe.gov.br/dataset/unidade-conservacao-da-natureza" target="_blank" rel="noopener">Unidades de conservação ↗</a></p>
+    </article>
   </section>
   <section class="method-section" id="metodo"><div><p class="eyebrow">CIÊNCIA COM TRANSPARÊNCIA</p><h2>De onde vêm essas informações?</h2><p>Dados públicos, critérios explícitos e resultados que você pode conferir.</p></div><div class="method-details"><details open><summary>Imagens, período e processamento</summary><p>Foram utilizadas imagens Landsat Collection 2 Level 2. A temperatura superficial foi obtida do produto do USGS, e a reflectância foi utilizada para calcular NDVI, NDBI e NDWI. A configuração inicial seleciona até três cenas por ano entre setembro e dezembro, de 2019 a 2026. São composições sazonais, não médias anuais. O ano corrente é identificado como parcial.</p><p>Nuvens, cirrus, sombras, neve, água, saturação e pixels com incerteza térmica acima de 8 K são filtrados. Pelo menos 75% dos pixels de 30 m de cada célula precisam ser válidos. As observações são agregadas em grade de 120 m e combinadas pela mediana.</p></details><details><summary>O que o mapa de contraste térmico significa?</summary><p>Mostra quanto cada célula difere da mediana terrestre do Recife na composição selecionada. Valores positivos indicam superfícies relativamente mais quentes. Não é uma comparação urbana-rural nem uma medição da temperatura do ar.</p></details><details><summary>Aprendizagem de máquina e limites</summary><p>O Random Forest Regressor recebe NDVI, NDBI, NDWI e reflectâncias vermelha, infravermelha próxima e infravermelha de ondas curtas. Nenhuma banda térmica entra como preditora. Todas as observações de uma localização ficam no mesmo bloco de validação de 2,4 km. O mapa estimado usa o modelo final ajustado aos dados; as métricas usam apenas previsões fora dos blocos de treinamento. Isso não mede previsão de anos futuros.</p><p>A importância das variáveis mede contribuição preditiva por redução de impureza; não estabelece causalidade. NDVI não é porcentagem de árvores. Não se inferem telhados ou árvores individuais nesta resolução.</p></details><details><summary>Cenas utilizadas e qualidade da cobertura</summary><div id="scenesList">Nenhuma imagem processada ainda.</div></details><details><summary>Fontes e arquivos</summary><p>O CSV pode ser aberto em uma planilha para consultar os bairros. O GeoTIFF é uma camada geográfica para programas como QGIS. O arquivo de procedência registra as cenas e os parâmetros usados no processamento.</p><p><a href="https://www.usgs.gov/landsat-missions/landsat-collection-2-surface-temperature" target="_blank" rel="noopener">USGS · Temperatura superficial Landsat ↗</a></p><p><a href="https://planetarycomputer.microsoft.com/dataset/landsat-c2-l2" target="_blank" rel="noopener">Microsoft Planetary Computer · Catálogo Landsat ↗</a></p><p><a href="https://dados.recife.pe.gov.br/dataset/1702c764-ec7a-4ef0-9861-8acd0e40c819" target="_blank" rel="noopener">Prefeitura do Recife · Malha de bairros ↗</a></p><p><a href="/download/manifest.json">Baixar procedência e configuração ↗</a> · <a id="downloadTif" href="#">GeoTIFF da camada selecionada ↗</a></p></details></div></section>
   <footer><span class="footer-brand">recife<b>calor</b> ✳</span><span>Projeto Integrador de Ciência dos Dados III · Recife, PE</span><span>Feito de dados. Inspirado no mangue.</span></footer>

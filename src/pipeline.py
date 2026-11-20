@@ -187,6 +187,10 @@ def process_scene(item, grid, cfg, fingerprint):
         array[~valid] = np.nan
         output[name] = block_reduce(array, int(cfg['resolution_m']/30))
         output[name][grid['zones'] == 0] = np.nan
+    strict_temperature = temperature.copy()
+    strict_temperature[~(valid & (values['qa'] * .01 <= min(4, cfg['max_temperature_uncertainty_k'])))] = np.nan
+    output['temperature_strict'] = block_reduce(strict_temperature, int(cfg['resolution_m']/30))
+    output['temperature_strict'][grid['zones'] == 0] = np.nan
     np.savez_compressed(path, **output)
     return output
 
@@ -195,8 +199,9 @@ def composite(scenes):
     result = {}
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', RuntimeWarning)
-        for name in ['temperature'] + FEATURES:
-            result[name] = np.nanmedian(np.stack([s[name] for s in scenes]), axis=0).astype('float32')
+        for name in ['temperature', 'temperature_strict'] + FEATURES:
+            result[name] = np.nanmedian(np.stack([s.get(name, np.full_like(s['temperature'], np.nan)) for s in scenes]), axis=0).astype('float32')
+    result['temperature_first'] = scenes[0]['temperature'].copy()
     result['count'] = np.sum([np.isfinite(s['temperature']) for s in scenes], axis=0).astype('uint8')
     return result
 
@@ -268,6 +273,10 @@ def train_model(composites, grid, cfg, progress):
         predicted = np.full(mask.shape, np.nan, dtype=np.float32)
         predicted[mask] = final.predict(np.column_stack([arrays[k][mask] for k in FEATURES]))
         arrays['predicted'] = predicted
+        validation = np.full(mask.shape, np.nan, dtype=np.float32)
+        samples = frame[frame.year == year]
+        validation[samples.row.to_numpy(), samples.col.to_numpy()] = samples.predicted_oof - samples.temperature
+        arrays['validation_error'] = validation
     return metrics
 
 
@@ -357,7 +366,7 @@ def _run_pipeline(progress, years=None):
         raise ValueError('Os anos solicitados devem estar dentro do período de config.json.')
     progress('Carregando limites oficiais dos bairros do Recife')
     geometry, grid = geometry_grid(cfg)
-    signature = hashlib.sha256(json.dumps({**cfg,'bbox':grid['bbox'],'version':3},sort_keys=True).encode()).hexdigest()[:12]
+    signature = hashlib.sha256(json.dumps({**cfg,'bbox':grid['bbox'],'version':4},sort_keys=True).encode()).hexdigest()[:12]
     composites, records, failures = {}, {}, []
     for year in (years or range(cfg['start_year'],cfg['end_year']+1)):
         progress(f'Consultando imagens de {year}')
@@ -411,4 +420,7 @@ def _run_pipeline(progress, years=None):
                   'resolution':'Grade de 120 m; Landsat térmico tem resolução nativa aproximada de 100 m, distribuída a 30 m.',
                   'coverage':'Água e pixels sem qualidade suficiente ficam transparentes; cobertura usa toda a malha como denominador.'}})
     progress('Concluído: mapas e modelo disponíveis no site')
+    from .research import build_research
+    progress('Gerando análises espaciais e contexto demográfico')
+    build_research()
     return {'years':list(composites),'failures':failures,'mae':metrics['model']['mae']}

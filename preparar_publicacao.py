@@ -19,6 +19,9 @@ def prepare(destination):
         "data/processed/bairros.geojson", "data/processed/grid.json",
         "outputs/manifest.json", "outputs/metrics.json",
     ]
+    files.extend(str(path.relative_to(ROOT)) for path in (ROOT / 'outputs').glob('research*.json'))
+    files.extend(str(path.relative_to(ROOT)) for path in (ROOT / 'data/contexto').glob('*')
+                 if path.suffix in {'.json', '.geojson', '.gz'})
     files.extend(str(path.relative_to(ROOT)) for folder in ("web", "src")
                  for path in (ROOT / folder).rglob("*")
                  if path.is_file() and path.suffix in {".html", ".js", ".css", ".svg", ".png", ".txt", ".py"})
@@ -49,7 +52,7 @@ def prepare(destination):
     )
     (destination / ".vercelignore").write_text(
         ".github/\n.venv/\n__pycache__/\nmain.py\nsrc/pipeline.py\npreparar_publicacao.py\nrequirements-processing.txt\n"
-        "data/raw/\noutputs/models/\noutputs/validation_predictions.csv\n",
+        "data/raw/\ndata/contexto/\noutputs/models/\noutputs/validation_predictions.csv\n",
         encoding="utf-8",
     )
     print(f"Cópia pronta: {destination} ({len(years)} anos)")

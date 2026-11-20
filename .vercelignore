@@ -8,3 +8,7 @@ requirements-processing.txt
 data/raw/
 outputs/models/
 outputs/validation_predictions.csv
+
+data/contexto/
+
+.pytest_cache/

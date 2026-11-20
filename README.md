@@ -21,6 +21,10 @@ Observatório de temperatura da superfície e vegetação em Recife. O projeto c
 | Histórico e comparação | Composições a partir de 2019, séries por bairro e comparação entre bairros ou anos. |
 | Indicadores | Rankings de temperatura e vegetação, datas das cenas e avaliação do modelo. |
 | Downloads | Estatísticas por bairro em CSV, camadas em GeoTIFF e métricas do modelo em JSON. |
+| Análises espaciais | Diferença entre anos em células comuns, recorrência de áreas relativamente quentes, quantidade de cenas e erro de validação espacial. |
+| Perfil de trajeto | Temperatura da superfície amostrada ao longo de uma linha definida no mapa. |
+| Distribuições e sensibilidade | Quantis por bairro, faixas de NDVI, filtro de incerteza mais rigoroso e comparação com a primeira cena. |
+| Contexto natural e populacional | Distâncias a parques, rios e ao Parque dos Manguezais, com população por bairro do Censo 2022. |
 | Recife, agora | Temperatura do ar e horário da observação do Aeroporto de Recife, estação SBRF. |
 
 ## Como os dados são tratados
@@ -31,6 +35,16 @@ Observatório de temperatura da superfície e vegetação em Recife. O projeto c
 4. O processamento calcula temperatura superficial, índices como NDVI, NDBI e NDWI, contraste térmico em relação à mediana municipal e estatísticas por bairro.
 
 Cada composição representa as cenas selecionadas para o período. Compare os anos considerando as datas e a cobertura disponível. No painel, a maior temperatura observada corresponde à célula mais quente da composição. O cartão de temperatura do ar usa a medição pontual SBRF, com horário próprio.
+
+## Análises adicionais
+
+A seção **Onde o calor se repete?** possui controles próprios de ano e referência. A frequência considera células pelo menos 2 °C acima da mediana municipal em cada composição e exige pelo menos três anos válidos. A diferença entre dois anos usa somente células válidas nos dois períodos. Os erros do modelo são previsões de validação fora do treinamento menos observações.
+
+O teste térmico mais rigoroso utiliza um limite de incerteza de até 4 K, preservando os demais critérios e as mesmas cenas selecionadas. A comparação com a primeira cena permite explorar a sensibilidade à composição temporal. Os quantis e médias são calculados com todas as células válidas de cada grupo.
+
+O contexto usa os cadastros municipais de parques, praças, recursos hídricos e unidades de conservação, consultados em 19/11/2026. A distância é aproximada na grade de 120 m, com áreas que tocam as células consideradas como distância zero. O recorte de manguezal corresponde à UCN Parque dos Manguezais. Os cadastros atuais são usados como referência de localização para todos os anos, sem afirmar que sua configuração era idêntica no passado.
+
+O IBGE fornece a população de cada bairro em 2022, variável V0001 (Total de pessoas), do arquivo de agregados por bairro atualizado em 20/05/2026. A tabela contextual cruza a população do bairro com seus indicadores de superfície. Ela não estima a quantidade de pessoas nas células quentes. As fontes, datas e hashes estão em [data/contexto/fontes.json](data/contexto/fontes.json). A camada de rios está comprimida sem perda em GZIP.
 
 ## Modelo e avaliação
 
@@ -43,16 +57,19 @@ recife-calor/
 ├── .github/workflows/
 │   └── atualizar-mapas.yml       # Processa, valida e publica na nuvem
 ├── data/
+│   ├── contexto/                # Bases municipais e população do Censo 2022
 │   └── processed/               # Dados preparados para consulta pelo site
 ├── outputs/
 │   ├── maps/                    # Camadas PNG e GeoTIFF
 │   ├── bairros_*.csv            # Indicadores por bairro e ano
 │   ├── manifest.json            # Cenas, cobertura e parâmetros
+│   ├── research*.json            # Análises por ano e grade geográfica
 │   └── metrics.json             # Avaliação do modelo
 ├── public/static/               # Recursos estáticos servidos na Vercel
 ├── src/
 │   ├── common.py                # Configuração e funções compartilhadas
 │   ├── pipeline.py              # Coleta, tratamento e treinamento
+│   ├── research.py               # Análises espaciais e contexto
 │   └── weather.py               # Consulta à estação meteorológica
 ├── web/                         # Interface, Leaflet, estilos e ilustrações
 ├── app.py                       # Aplicação Flask e API
@@ -81,6 +98,7 @@ Abra o [endereço local](http://127.0.0.1:8000/). Para refazer a coleta e o trei
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r requirements-processing.txt
 .\.venv\Scripts\python.exe main.py
+.\.venv\Scripts\python.exe -m pytest tests -q
 ```
 
 ## Publicação na nuvem
