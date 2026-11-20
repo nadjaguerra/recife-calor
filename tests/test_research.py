@@ -14,6 +14,17 @@ def test_quantiles_ignore_missing_values_and_preserve_empty_groups():
     assert normalized_name('Poço') == normalized_name('Poço da Panela')
 
 
+def test_research_files_do_not_reuse_file_size_etags_between_deployments():
+    from app import app
+    client = app.test_client()
+    for route in ['/api/research-grid', '/api/research/2026']:
+        response = client.get(route, headers={'If-None-Match': '*', 'If-Modified-Since': 'Wed, 01 Jan 2098 00:00:00 GMT'})
+        assert response.status_code == 200
+        assert response.headers['Cache-Control'] == 'no-store'
+        assert 'ETag' not in response.headers
+        assert response.get_json()['generated_at']
+
+
 def test_exported_errors_are_signed_out_of_training_predictions():
     grid = json.loads((OUTPUT / 'research-grid.json').read_text(encoding='utf-8'))
     predictions = pd.read_csv(OUTPUT / 'validation_predictions.csv')

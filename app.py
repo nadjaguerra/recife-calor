@@ -26,6 +26,13 @@ def read_json(path, fallback=None):
     return json.loads(path.read_text(encoding='utf-8')) if path.exists() else fallback
 
 
+@app.after_request
+def prevent_stale_api_data(response):
+    if request.path.startswith('/api/'):
+        response.headers['Cache-Control'] = 'no-store'
+    return response
+
+
 @app.get('/')
 def index():
     return send_from_directory(ROOT/'web','index.html')
@@ -101,12 +108,12 @@ def research(year):
     path = OUTPUT / f'research-{year}.json'
     if not path.exists():
         return jsonify(error='Análise deste ano ainda indisponível.'), 404
-    return send_from_directory(OUTPUT, path.name, max_age=0)
+    return send_from_directory(OUTPUT, path.name, max_age=0, conditional=False, etag=False)
 
 
 @app.get('/api/research-grid')
 def research_grid():
-    return send_from_directory(OUTPUT, 'research-grid.json', max_age=0)
+    return send_from_directory(OUTPUT, 'research-grid.json', max_age=0, conditional=False, etag=False)
 
 
 @app.get('/api/weather')
